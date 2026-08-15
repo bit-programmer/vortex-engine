@@ -1,7 +1,9 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { pinoLogger } from 'hono-pino'
+import env from './core/env.js'
 
-const app = new Hono()
+const app = new Hono().use( pinoLogger({ pino: { level: env.LOG_LEVEL } }) )
 
 app.get('/', (c) => {
   return c.text('Hello Hono!')
