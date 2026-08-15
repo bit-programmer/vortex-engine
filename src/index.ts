@@ -6,7 +6,7 @@ import env from './core/env.js'
 const app = new Hono().use( pinoLogger({ pino: { level: env.LOG_LEVEL } }) )
 
 app.get('/', (c) => {
-  return c.text('Hello Hono!')
+  return c.text('Hello Hono!');
 })
 
 app.get('/health', (c) => {

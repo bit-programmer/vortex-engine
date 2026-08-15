@@ -6,7 +6,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "start:services": "docker compose up -d",
-    "stop:services": "docker compose down"
+    "stop:services": "docker compose down",
+    "db:schema:push": "npx drizzle-kit push",
+    "db:migration:generate": "npx drizzle-kit generate",
+    "db:migration:apply": "npx drizzle-kit migrate"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
