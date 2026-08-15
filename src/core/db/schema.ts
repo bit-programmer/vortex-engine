@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
-import { boolean, date, integer, pgEnum, pgTable, text, time, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, date, integer, pgEnum, pgTable, primaryKey, text, time, timestamp, varchar } from "drizzle-orm/pg-core";
+import { SingleStoreBigIntString } from "drizzle-orm/singlestore-core";
+import { de } from "zod/v4/locales";
 
 // Games
 export const gamesTable = pgTable("games", {
@@ -39,3 +41,49 @@ export const offerDetailsTable = pgTable("offer_details", {
   offerObj: offerObjEnum("offer_obj"),
   offerValue: text("offer_value")
 });
+
+// Booking
+export const bookingTable = pgTable('booking_tables', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  phoneNumber: text("phone_number").notNull(),
+  offers: text("offers").array(),
+  originalAmount: integer("original_amount").default(0),
+  amountCharged: integer("amount_charged").default(0),
+  count: integer().notNull().default(1),
+  startTime: timestamp("start_time", { precision: 6, withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { precision: 6, withTimezone: true }).notNull(),
+  // games: [],
+  // setupId
+});
+
+// Booking and offers
+export const bookingAndOffersTable = pgTable("booking_offers", {
+  bookingId: integer("booking_id"),
+  offerId: integer("offer_id"),
+}, (table) => ({
+  pk: primaryKey({
+    columns: [table.bookingId, table.offerId]
+  })
+}));
+
+// Booking and games
+export const bookingAndGames = pgTable("booking_games", {
+  bookingId: integer("booking_id"),
+  gameId: integer("game_id"),
+}, (table) => ({
+  pk: primaryKey({
+    columns: [table.bookingId, table.gameId]
+  })
+}));
+
+
+// Payment table
+
+
+// Setup
+
+
+// Testimonials
+
+
+// Roadmap
