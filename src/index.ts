@@ -1,4 +1,4 @@
-import { serve } from '@hono/node-server'
+// import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { pinoLogger } from 'hono-pino'
 import env from './core/env.js'
@@ -19,14 +19,14 @@ app.get('/health', (c) => {
   return c.json({ "status": "healthy" });
 })
 
-const isTest = process.argv[1] && process.argv[1].includes('test-api');
-if (!isTest && process.env.VERCEL !== '1') {
-  serve({
-    fetch: app.fetch,
-    port: 3001
-  }, (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`)
-  })
-}
+// const isTest = process.argv[1] && process.argv[1].includes('test-api');
+// if (!isTest && process.env.VERCEL !== '1') {
+//   serve({
+//     fetch: app.fetch,
+//     port: 3001
+//   }, (info) => {
+//     console.log(`Server is running on http://localhost:${info.port}`)
+//   })
+// }
 
 export default app
