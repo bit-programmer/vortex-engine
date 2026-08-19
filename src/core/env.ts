@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as z from "zod";
 import type { LevelWithSilentOrString } from "pino";
 import { exit } from "process";
@@ -8,6 +9,7 @@ const envSchema = z.object({
   DB_PASSWORD: z.string(),
   DB_NAME: z.string(),
   DB_PORT: z.string(),
+  JWT_SECRET: z.string(),
   // TODO: figure out a way to import from pino definition file
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("debug")
 });
