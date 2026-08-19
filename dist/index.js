@@ -14,7 +14,7 @@ app.get('/health', (c) => {
     return c.json({ "status": "healthy" });
 });
 const isTest = process.argv[1] && process.argv[1].includes('test-api');
-if (!isTest) {
+if (!isTest && process.env.VERCEL !== '1') {
     serve({
         fetch: app.fetch,
         port: 3001
@@ -22,3 +22,4 @@ if (!isTest) {
         console.log(`Server is running on http://localhost:${info.port}`);
     });
 }
+export default app;
