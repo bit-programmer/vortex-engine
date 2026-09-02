@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
-    "@types/node": "^26.2.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "1.0.0-rc.4",
     "hono": "^4.13.2",
@@ -24,8 +23,9 @@
   },
   "devDependencies": {
     "@types/pg": "^8.21.0",
+    "@types/node": "^26.2.0",
     "drizzle-kit": "1.0.0-rc.4",
     "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   }
 }

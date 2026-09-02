@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, time, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, integer, jsonb, pgEnum, pgTable, primaryKey, text, time, timestamp, varchar } from "drizzle-orm/pg-core";
 
 // Games
 export const gamesTable = pgTable("games", {
@@ -13,28 +13,41 @@ export const gamesTable = pgTable("games", {
   updatedAt: timestamp("updated_at", { precision: 6, withTimezone: true }).notNull().defaultNow()
 });
 
-// Setup
-export const setupsTable = pgTable("setups", {
+// Setup configurations table (Metadata)
+export const setupConfigurationsTable = pgTable("setup_configurations", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull().unique(),   // e.g. "Set-1", "Set-2"
-  tagline: varchar({ length: 512 }),                   // Short marketing line shown on frontend
+  name: varchar({ length: 255 }).notNull().unique(),
   description: text(),
   consoleType: varchar("console_type", { length: 255 }).notNull().default('PS5'),
-  consoleCount: integer("console_count").notNull().default(1),
-  chargePerPersonPerHour: integer("charge_per_person_per_hour").notNull().default(0),
-  otherNecessaries: jsonb("other_necessaries"),
+  screenType: varchar("screen_type", { length: 255 }),
+  price: integer().notNull().default(0),
+  singlePlayerPrice: integer("single_player_price"),
+  multiplayerPrice: integer("multiplayer_price").default(0),
+  extendedConfigurations: jsonb("extended_configurations"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { precision: 6, withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { precision: 6, withTimezone: true }).notNull().defaultNow()
 });
 
-// Setup and games junction table (Many-to-Many)
+// Setups table (Actual physical setup instances)
+export const setupsTable = pgTable("setups", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  setupConfigurationId: integer("setup_configuration_id").notNull().references(() => setupConfigurationsTable.id, { onDelete: "cascade" }),
+  name: varchar({ length: 255 }).notNull(),
+  images: text().array().notNull().default(sql`'{}'::text[]`),
+  videos: text().array().notNull().default(sql`'{}'::text[]`),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { precision: 6, withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { precision: 6, withTimezone: true }).notNull().defaultNow()
+});
+
+// Setup and games junction table (Many-to-Many on configuration)
 export const setupGamesTable = pgTable("setup_games", {
-  setupId: integer("setup_id").notNull().references(() => setupsTable.id, { onDelete: "cascade" }),
+  setupConfigurationId: integer("setup_configuration_id").notNull().references(() => setupConfigurationsTable.id, { onDelete: "cascade" }),
   gameId: integer("game_id").notNull().references(() => gamesTable.id, { onDelete: "cascade" }),
 }, (table) => ({
   pk: primaryKey({
-    columns: [table.setupId, table.gameId]
+    columns: [table.setupConfigurationId, table.gameId]
   })
 }));
 
@@ -86,16 +99,19 @@ export const bookingTable = pgTable('booking_tables', {
   phoneNumber: text("phone_number").notNull(),
   setupId: integer("setup_id").references(() => setupsTable.id, { onDelete: "set null" }),
   userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
+  bookedBy: integer("booked_by").references(() => usersTable.id, { onDelete: "set null" }),
   originalAmount: integer("original_amount").default(0),
   amountCharged: integer("amount_charged").default(0),
+  cashAmount: integer("cash_amount").default(0),
+  upiAmount: integer("upi_amount").default(0),
   count: integer().notNull().default(1), // number of persons
-  status: bookingStatusEnum("status").default('TENTATIVE').notNull(),
+  status: bookingStatusEnum("status").default('CONFIRMED').notNull(),
   // Slot span (earliest start → latest end across all selected slots)
   startTime: timestamp("start_time", { precision: 6, withTimezone: true }).notNull(),
   endTime: timestamp("end_time", { precision: 6, withTimezone: true }).notNull(),
   // Customer intent: what they booked from the website
   requestedStartTime: timestamp("requested_start_time", { precision: 6, withTimezone: true }),
-  requestedNoOfHours: integer("requested_no_of_hours"),
+  requestedNoOfHours: doublePrecision("requested_no_of_hours"),
   // Snapshot of setup configuration at the time of booking (for historical reference)
   setupSnapshot: jsonb("setup_snapshot"),
   // Actual session timestamps set by the café owner on confirmation / check-in
@@ -144,4 +160,35 @@ export const bookingSlotsTable = pgTable("booking_slots", {
   bookingId: integer("booking_id").notNull().references(() => bookingTable.id, { onDelete: "cascade" }),
   startTime: timestamp("start_time", { precision: 6, withTimezone: true }).notNull(),
   endTime: timestamp("end_time", { precision: 6, withTimezone: true }).notNull()
+});
+
+// Tentative Booking
+export const tentativeBookingTable = pgTable('tentative_bookings', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  phoneNumber: text("phone_number").notNull(),
+  setupId: integer("setup_id").references(() => setupsTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
+  bookedBy: integer("booked_by").references(() => usersTable.id, { onDelete: "set null" }),
+  originalAmount: integer("original_amount").default(0),
+  amountCharged: integer("amount_charged").default(0),
+  count: integer().notNull().default(1), // number of persons
+  startTime: timestamp("start_time", { precision: 6, withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { precision: 6, withTimezone: true }).notNull(),
+  requestedStartTime: timestamp("requested_start_time", { precision: 6, withTimezone: true }),
+  requestedNoOfHours: doublePrecision("requested_no_of_hours"),
+  setupSnapshot: jsonb("setup_snapshot"),
+  gameIds: integer("game_ids").array().notNull().default(sql`'{}'::integer[]`),
+  appliedOfferIds: integer("applied_offer_ids").array().notNull().default(sql`'{}'::integer[]`),
+  createdAt: timestamp("created_at", { precision: 6, withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { precision: 6, withTimezone: true }).notNull().defaultNow()
+});
+
+// Customers (end-user / walk-in customer profiles)
+export const customersTable = pgTable("customers", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  phoneNumber: varchar("phone_number", { length: 20 }).notNull().unique(),
+  name: varchar({ length: 255 }).notNull(),
+  dateOfBirth: varchar("date_of_birth", { length: 10 }), // YYYY-MM-DD
+  createdAt: timestamp("created_at", { precision: 6, withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { precision: 6, withTimezone: true }).notNull().defaultNow()
 });
